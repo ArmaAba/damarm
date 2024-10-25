@@ -28,7 +28,6 @@ class HelloWorld(AbstractLambda):
             return response
 
         else:
-            # Custom error response if path is not "/hello" or method is not "GET"
             error_message = {
                 "statusCode": 400,
                 "message": f"Bad request syntax or unsupported method. Request path: {path}. HTTP method: {method}"
