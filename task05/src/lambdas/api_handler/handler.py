@@ -47,19 +47,16 @@ class ApiHandler(AbstractLambda):
             content = request_body.get("content")
             item_to_save = {
                 "id": request_body["id"],
-                "principalId": principal_id,
-                "createdAt": request_body["createdAt"],
-                "body": content
-            }
+                "event": {
+                    "id": request_body["id"],
+                    "principalId": principal_id,
+                    "createdAt": request_body["createdAt"],
+                    "body": content
+                }}
             table.put_item(Item=item_to_save)
             body = {
                 "statusCode": 201,
-                "event": {
-                    "id": item_to_save["id"],  # Include the ID of the saved item
-                    "principalId": principal_id,  # Principal ID from the request
-                    "createdAt": item_to_save["createdAt"],  # CreatedAt timestamp
-                    "body": content  # The original content wrapped in the body key
-                }
+                "event": item_to_save["event"]
             }
             return self.build_response(200, body)
         except ClientError as e:
