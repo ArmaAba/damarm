@@ -42,19 +42,29 @@ class ApiHandler(AbstractLambda):
 
     def save_events(self, request_body):
         try:
+            id = request_body.get("id")
             principal_id = request_body.get("principalId")
+            created_at = request_body.get("createdAt")
             content = request_body.get("content")
-            table.put_item(Item=request_body)
-            body = {
-                "statusCode": 201,
-                "event": {"id": request_body["id"],
-                          "principalId": principal_id,
-                          "createdAt": request_body["createdAt"],
-                          "body": content
-                          }
 
+            # Structure the item with 'id' at the top level for DynamoDB
+            item = {
+                "id": id,  # Primary key at the top level
+                "event": {  # Nested structure as required
+                    "id": id,
+                    "principalId": principal_id,
+                    "createdAt": created_at,
+                    "body": content
+                }
             }
-            return self.build_response(200, body)
+            table.put_item(Item=item)
+            # Build response to include the nested event structure
+            response_body = {
+                "statusCode": 201,
+                "event": item["event"]
+            }
+
+            return self.build_response(200, response_body)
         except ClientError as e:
             print('Error:', e)
             return self.build_response(400, e.response['Error']['Message'])
