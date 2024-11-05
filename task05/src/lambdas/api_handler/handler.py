@@ -43,28 +43,20 @@ class ApiHandler(AbstractLambda):
 
     def save_events(self, request_body):
         try:
-            # Generate a new UUID for the event ID if not provided
-            id = request_body.get("id") or str(uuid.uuid4())
-            principal_id = int(request_body.get("principalId"))  # Ensure principalId is an integer
-            created_at = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"  # ISO 8601 without microseconds
-            content = request_body.get("content")  # Expected to be a Map<String, String>
-
-            # Define the item structure to store in DynamoDB
+            id = request_body.get("id")
+            principal_id = request_body.get("principalId")
+            created_at = request_body.get("createdAt")
+            content = request_body.get("content")
             item = {
-                "id": id,  # UUID v4 as a string
-                "principalId": principal_id,  # Integer
-                "createdAt": created_at,  # ISO 8601 formatted datetime
-                "body": content  # Stored as a map
+                "id": id,
+                "principalId": principal_id,
+                "createdAt": created_at,
+                "body": content
             }
-
-            # Insert the item into the DynamoDB table
             table.put_item(Item=item)
-
-            # Retrieve the saved item to verify it was saved correctly
+            # Fetch the item back from DynamoDB to verify it was saved
             response = table.get_item(Key={"id": id})
             saved_item = response.get("Item")
-
-            # Build the response to match the expected format
             if saved_item:
                 response_body = {
                     "statusCode": 201,
@@ -72,23 +64,13 @@ class ApiHandler(AbstractLambda):
                         "id": saved_item["id"],
                         "principalId": saved_item["principalId"],
                         "createdAt": saved_item["createdAt"],
-                        "body": saved_item["body"]
+                        "body": saved_item["body"]  # body as a map (key-value pairs)
                     }
                 }
                 return self.build_response(201, response_body)
-            else:
-                # Return a structured error if the item was not found after saving
-                return self.build_response(400, {
-                    "errors": [
-                        "Requested resource not found"
-                    ]
-                })
-
         except ClientError as e:
-            print("Error:", e)
-            return self.build_response(400, {
-                "errors": [e.response["Error"]["Message"]]
-            })
+            print('Error:', e)
+            return self.build_response(400, e.response['Error']['Message'])
 
     def build_response(self, status_code, body):
         return {
