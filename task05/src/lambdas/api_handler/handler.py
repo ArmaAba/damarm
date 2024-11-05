@@ -58,7 +58,7 @@ class ApiHandler(AbstractLambda):
                 "statusCode": 201,
                 "event": item
             }
-            return self.build_response(200, response_body)
+            return self.build_response(201, response_body)
         except ClientError as e:
             print('Error:', e)
             return self.build_response(400, e.response['Error']['Message'])
