@@ -32,7 +32,7 @@ class ApiHandler(AbstractLambda):
             elif http_method == "POST" and path == events_path:
                 request_body = json.loads(event["body"])
                 request_body["id"] = str(uuid.uuid4())
-                request_body["createdAt"] = datetime.utcnow().isoformat()
+                request_body["createdAt"] = datetime.utcnow().isoformat() + "Z"
                 response = self.save_events(request_body)
             else:
                 response = self.build_response(404, "404 Not Found")
@@ -45,15 +45,21 @@ class ApiHandler(AbstractLambda):
         try:
             principal_id = request_body.get("principalId")
             content = request_body.get("content")
-            table.put_item(Item=request_body)
+            item_to_save = {
+                "id": request_body["id"],
+                "principalId": principal_id,
+                "createdAt": request_body["createdAt"],
+                "body": content
+            }
+            table.put_item(Item=item_to_save)
             body = {
                 "statusCode": 201,
-                "event": {"id": request_body["id"],
-                          "principalId": principal_id,
-                          "createdAt": request_body["createdAt"],
-                          "body": content
-                          }
-
+                "event": {
+                    "id": item_to_save["id"],  # Include the ID of the saved item
+                    "principalId": principal_id,  # Principal ID from the request
+                    "createdAt": item_to_save["createdAt"],  # CreatedAt timestamp
+                    "body": content  # The original content wrapped in the body key
+                }
             }
             return self.build_response(200, body)
         except ClientError as e:
