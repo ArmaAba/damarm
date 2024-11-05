@@ -54,11 +54,20 @@ class ApiHandler(AbstractLambda):
                 "body": content
             }
             table.put_item(Item=item)
-            response_body = {
-                "statusCode": 201,
-                "event": item
-            }
-            return self.build_response(201, response_body)
+            # Fetch the item back from DynamoDB to verify it was saved
+            response = table.get_item(Key={"id": id})
+            saved_item = response.get("Item")
+            if saved_item:
+                response_body = {
+                    "statusCode": 201,
+                    "event": {
+                        "id": saved_item["id"],
+                        "principalId": saved_item["principalId"],
+                        "createdAt": saved_item["createdAt"],
+                        "body": saved_item["body"]  # body as a map (key-value pairs)
+                    }
+                }
+                return self.build_response(201, response_body)
         except ClientError as e:
             print('Error:', e)
             return self.build_response(400, e.response['Error']['Message'])
