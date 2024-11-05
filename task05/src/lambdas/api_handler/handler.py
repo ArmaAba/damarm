@@ -30,7 +30,8 @@ class ApiHandler(AbstractLambda):
                 response = self.build_response(200, "All good")
             elif http_method == "POST" and path == events_path:
                 request_body = json.loads(event["body"])
-                request_body["id"] = str(uuid.uuid4())
+                if "id" not in request_body:
+                    request_body["id"] = str(uuid.uuid4())
                 request_body["createdAt"] = datetime.utcnow().isoformat() + "Z"
                 response = self.save_events(request_body)
             else:
@@ -46,24 +47,17 @@ class ApiHandler(AbstractLambda):
             principal_id = request_body.get("principalId")
             created_at = request_body.get("createdAt")
             content = request_body.get("content")
-
-            # Structure the item with 'id' at the top level for DynamoDB
             item = {
-                "id": id,  # Primary key at the top level
-                "event": {  # Nested structure as required
-                    "id": id,
-                    "principalId": principal_id,
-                    "createdAt": created_at,
-                    "body": content
-                }
+                "id": id,
+                "principalId": principal_id,
+                "createdAt": created_at,
+                "body": content
             }
             table.put_item(Item=item)
-            # Build response to include the nested event structure
             response_body = {
                 "statusCode": 201,
-                "event": item["event"]
+                "event": item
             }
-
             return self.build_response(200, response_body)
         except ClientError as e:
             print('Error:', e)
