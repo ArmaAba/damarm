@@ -23,7 +23,6 @@ class ApiHandler(AbstractLambda):
 
     def handle_request(self, event, context):
         print("Request event: ", event)
-        response = None
         try:
             http_method = event.get("httpMethod")
             path = event.get("path")
@@ -45,18 +44,15 @@ class ApiHandler(AbstractLambda):
         try:
             principal_id = request_body.get("principalId")
             content = request_body.get("content")
-            item_to_save = {
-                "id": request_body["id"],
-                "event": {
-                    "id": request_body["id"],
-                    "principalId": principal_id,
-                    "createdAt": request_body["createdAt"],
-                    "body": content
-                }}
-            table.put_item(Item=item_to_save)
+            table.put_item(Item=request_body)
             body = {
                 "statusCode": 201,
-                "event": item_to_save["event"]
+                "event": {"id": request_body["id"],
+                          "principalId": principal_id,
+                          "createdAt": request_body["createdAt"],
+                          "body": content
+                          }
+
             }
             return self.build_response(200, body)
         except ClientError as e:
