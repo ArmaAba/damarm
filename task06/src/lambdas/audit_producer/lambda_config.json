@@ -13,10 +13,11 @@
           {
           "resource_type": "dynamodb_trigger",
           "target_table": "Configuration",
+          "batch_size": 100,
           "function_response_types": ["ReportBatchItemFailures"]
       }
   ],
-  "env_variables": {"target_table":  "${target_table}"},
+  "env_variables": {"target_table": "${target_table}"},
   "publish_version": true,
   "alias": "${lambdas_alias_name}",
   "url_config": {},
