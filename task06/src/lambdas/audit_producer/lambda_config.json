@@ -9,7 +9,13 @@
   "timeout": 100,
   "lambda_path": "lambdas/audit_producer",
   "dependencies": [],
-  "event_sources": [],
+  "event_sources": [
+          {
+          "resource_type": "dynamodb_trigger",
+          "target_table": "Configuration",
+          "function_response_types": ["ReportBatchItemFailures"]
+      }
+  ],
   "env_variables": {"target_table":  "${target_table}"},
   "publish_version": true,
   "alias": "${lambdas_alias_name}",

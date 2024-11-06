@@ -37,11 +37,6 @@
     "stream": {
       "enabled": true,
       "stream_view_type": "NEW_AND_OLD_IMAGES"
-    },
-    "lambda_trigger": {
-      "enabled": true,
-      "lambda_function_arn": "arn:aws:lambda:${region}:${account_id}:function:audit_producer",
-      "batch_size": 100
     }
   },
   "Audit": {
