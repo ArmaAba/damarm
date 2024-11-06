@@ -13,7 +13,7 @@ class HelloWorld(AbstractLambda):
     def handle_request(self, event, context):
         path = event.get("path", "/")
         method = event["requestContext"]["httpMethod"]
-        if  method == "GET" and path == "/hello":
+        if  method == "GET" and path == "/events":
             response_body = {
                 "statusCode": 200,
                 "message": "Hello from Lambda",
