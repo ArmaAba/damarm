@@ -24,50 +24,63 @@ class AuditProducer(AbstractLambda):
         for record in event.get('Records', []):
             if record.get('eventName') in ['INSERT', 'MODIFY']:
                 try:
-                    # Get the primary key of the item that triggered the event
+                    # Extract the primary key (itemKey)
                     item_key = record['dynamodb']['Keys']['key']['S']
                     modification_time = datetime.utcnow().isoformat()
-                    new_value = None
+
+                    # Initialize variables
                     old_value = None
+                    new_value = {}
                     updated_attribute = None
 
                     _LOG.info("Processing record with eventName %s and itemKey %s", record['eventName'], item_key)
 
-                    # For INSERT event, store the entire NewImage in newValue
+                    # Handle INSERT events
                     if record['eventName'] == 'INSERT':
-                        new_image = record['dynamodb'].get('NewImage', {})
+                        # For a new item, capture 'key' and 'value' as nested fields within newValue
+                        new_key = record['dynamodb'].get('NewImage', {}).get('key', {}).get('S')
+                        new_value_field = record['dynamodb'].get('NewImage', {}).get('value', {}).get('N')
+
                         new_value = {
-                            "key": new_image['key']['S'],
-                            "value": int(new_image['value']['N'])
+                            'key': new_key,
+                            'value': int(new_value_field) if new_value_field else None
                         }
-                        _LOG.debug("New value for INSERT: %s", new_value)
 
-                    # For MODIFY event, store specific old and new values
+                        _LOG.debug("New item added with newValue: %s", new_value)
+
+                    # Handle MODIFY events
                     elif record['eventName'] == 'MODIFY':
-                        new_image = record['dynamodb'].get('NewImage', {})
-                        old_image = record['dynamodb'].get('OldImage', {})
+                        # Extract old and new values for 'value' attribute
+                        old_value_map = record['dynamodb'].get('OldImage', {}).get('value', {}).get('N')
+                        new_value_map = record['dynamodb'].get('NewImage', {}).get('value', {}).get('N')
 
-                        # Assuming 'value' is the attribute we're monitoring for changes
-                        old_value = int(old_image['value']['N'])
-                        new_value = int(new_image['value']['N'])
-                        updated_attribute = "value"
+                        # Check if there's an actual change in 'value' attribute
+                        if old_value_map != new_value_map:
+                            updated_attribute = 'value'
+                            old_value = int(old_value_map) if old_value_map else None
+                            new_value = {
+                                'key': item_key,
+                                'value': int(new_value_map) if new_value_map else None
+                            }
 
                         _LOG.debug("Old value: %s, New value: %s", old_value, new_value)
 
-                    # Construct audit item with appropriate structure
+                    # Construct the audit item
                     audit_item = {
-                        'id': str(uuid.uuid4()),  # Generate a new unique ID for the audit item
+                        'id': str(uuid.uuid4()),
                         'itemKey': item_key,
                         'modificationTime': modification_time,
                         'newValue': new_value
                     }
 
-                    # Add fields specific to MODIFY events
-                    if record['eventName'] == 'MODIFY':
+                    # Include oldValue and updatedAttribute only for MODIFY events
+                    if record['eventName'] == 'MODIFY' and updated_attribute:
                         audit_item['updatedAttribute'] = updated_attribute
                         audit_item['oldValue'] = old_value
 
-                    _LOG.info("Storing audit entry: %s", audit_item)
+                    _LOG.debug("Audit item to store: %s", audit_item)
+
+                    # Store the audit entry in DynamoDB
                     self.store_audit_entry(audit_item)
 
                 except Exception as e:
@@ -76,31 +89,8 @@ class AuditProducer(AbstractLambda):
         _LOG.info("Completed processing stream events successfully")
         return {
             'statusCode': 200,
-            'body': json}
-
-    def find_updated_attribute(self, old_value, new_value):
-        """
-        Helper function to find which attribute was updated based on the old and new values.
-        """
-        _LOG.debug("Finding updated attribute between old_value: %s and new_value: %s", old_value, new_value)
-        for key in new_value:
-            if new_value[key] != old_value.get(key):
-                _LOG.info("Found updated attribute: %s", key)
-                return key
-        _LOG.info("No updated attribute found")
-        return None
-
-    def store_audit_entry(self, audit_item):
-        """
-        Helper function to store the audit entry in the DynamoDB 'Audit' table.
-        """
-        try:
-            _LOG.info("Storing audit entry: %s", audit_item)
-            audit_table.put_item(Item=audit_item)
-            _LOG.info("Audit entry stored successfully")
-        except Exception as e:
-            _LOG.error("Error storing audit entry: %s", str(e), exc_info=True)
-            raise e
+            'body': json.dumps('Processed stream events successfully')
+        }
 
 
 HANDLER = AuditProducer()
