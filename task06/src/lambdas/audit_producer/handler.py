@@ -40,7 +40,6 @@ class AuditProducer(AbstractLambda):
                         'id': str(uuid.uuid4()),  # Generate a new unique ID for the audit item
                         'itemKey': item_key,
                         'modificationTime': modification_time,
-                        'oldValue': old_value,
                         'newValue': new_value
                     }
 
