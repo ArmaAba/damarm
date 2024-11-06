@@ -24,7 +24,7 @@ class AuditProducer(AbstractLambda):
         for record in event.get('Records', []):
             if record.get('eventName') in ['INSERT', 'MODIFY']:
                 try:
-                    item_key = record['dynamodb']['Keys']['id']['S']
+                    item_key = record['dynamodb']['Keys']['key']['S']
                     modification_time = datetime.utcnow().isoformat()
                     old_value = None
                     new_value = {}
@@ -37,9 +37,10 @@ class AuditProducer(AbstractLambda):
                         _LOG.debug("OldImage: %s, NewImage: %s", old_value, new_value)
 
                     audit_item = {
-                        'key': str(uuid.uuid4()),  # Generate a new unique ID for the audit item
+                        'id': str(uuid.uuid4()),  # Generate a new unique ID for the audit item
                         'itemKey': item_key,
                         'modificationTime': modification_time,
+                        'oldValue': old_value,
                         'newValue': new_value
                     }
 
