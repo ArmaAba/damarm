@@ -27,7 +27,7 @@ class AuditProducer(AbstractLambda):
                     old_value = record['dynamodb'].get('OldImage', {})
                     new_value = record['dynamodb'].get('NewImage', {})
                 audit_item = {
-                    'id': str(uuid.uuid4()),  # Generate a new unique ID for the audit item
+                    'key': str(uuid.uuid4()),  # Generate a new unique ID for the audit item
                     'itemKey': item_key,
                     'modificationTime': modification_time,
                     'newValue': new_value
