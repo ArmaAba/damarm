@@ -6,10 +6,11 @@ import boto3
 from botocore.exceptions import ClientError
 from decimal import Decimal
 from datetime import datetime
+import os
 
-_LOG = get_logger('ApiHandler-handler')
-dynamodb = boto3.resource('dynamodb')
-table_name = "cmtr-f7e4afc6-Events"
+_LOG = get_logger("ApiHandler-handler")
+dynamodb = boto3.resource("dynamodb")
+table_name = os.environ.get("target_table", "Events")
 table = dynamodb.Table(table_name)
 
 check_status = "/status"
