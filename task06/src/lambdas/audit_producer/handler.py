@@ -37,33 +37,38 @@ class AuditProducer(AbstractLambda):
 
                     # Handle INSERT events
                     if record['eventName'] == 'INSERT':
-                        # For a new item, capture 'key' and 'value' as nested fields within newValue
-                        new_key = record['dynamodb'].get('NewImage', {}).get('key', {}).get('S')
-                        new_value_field = record['dynamodb'].get('NewImage', {}).get('value', {}).get('N')
+                        new_image = record['dynamodb'].get('NewImage', {})
+                        new_key = new_image.get('key', {}).get('S')
+                        new_value_field = new_image.get('value', {}).get('N')
 
-                        new_value = {
-                            'key': new_key,
-                            'value': int(new_value_field) if new_value_field else None
-                        }
-
+                        if new_key and new_value_field:
+                            new_value = {
+                                'key': new_key,
+                                'value': int(new_value_field)  # Ensure valid conversion to integer
+                            }
+                        else:
+                            _LOG.warning("Missing 'key' or 'value' fields in NewImage for INSERT event")
                         _LOG.debug("New item added with newValue: %s", new_value)
 
                     # Handle MODIFY events
                     elif record['eventName'] == 'MODIFY':
-                        # Extract old and new values for 'value' attribute
-                        old_value_map = record['dynamodb'].get('OldImage', {}).get('value', {}).get('N')
-                        new_value_map = record['dynamodb'].get('NewImage', {}).get('value', {}).get('N')
+                        old_image = record['dynamodb'].get('OldImage', {})
+                        new_image = record['dynamodb'].get('NewImage', {})
 
-                        # Check if there's an actual change in 'value' attribute
-                        if old_value_map != new_value_map:
-                            updated_attribute = 'value'
-                            old_value = int(old_value_map) if old_value_map else None
+                        old_value_map = old_image.get('value', {}).get('N')
+                        new_value_map = new_image.get('value', {}).get('N')
+
+                        if old_value_map and new_value_map:
+                            old_value = int(old_value_map)
                             new_value = {
                                 'key': item_key,
-                                'value': int(new_value_map) if new_value_map else None
+                                'value': int(new_value_map)
                             }
-
-                        _LOG.debug("Old value: %s, New value: %s", old_value, new_value)
+                            if old_value != new_value['value']:
+                                updated_attribute = 'value'
+                                _LOG.debug("Detected change in 'value'. Old value: %s, New value: %s", old_value, new_value['value'])
+                        else:
+                            _LOG.warning("Missing 'value' fields in OldImage or NewImage for MODIFY event")
 
                     # Construct the audit item
                     audit_item = {
@@ -92,6 +97,19 @@ class AuditProducer(AbstractLambda):
             'body': json.dumps('Processed stream events successfully')
         }
 
+    def find_updated_attribute(self, old_value, new_value):
+        for key in new_value:
+            if new_value[key] != old_value.get(key):
+                return key
+        return None
+
+    def store_audit_entry(self, audit_item):
+        try:
+            audit_table.put_item(Item=audit_item)
+            _LOG.info(f"Audit entry stored: {audit_item}")
+        except Exception as e:
+            _LOG.error(f"Error storing audit entry: {str(e)}")
+            raise e
 
 HANDLER = AuditProducer()
 
