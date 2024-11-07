@@ -75,7 +75,7 @@ class AuditProducer(AbstractLambda):
                         'id': str(uuid.uuid4()),
                         'itemKey': item_key,
                         'modificationTime': modification_time,
-                        'newValue': new_value
+                        'newValue': int(new_value["value"])
                     }
 
                     # Include oldValue and updatedAttribute only for MODIFY events
