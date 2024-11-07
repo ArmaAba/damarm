@@ -59,6 +59,7 @@ class AuditProducer(AbstractLambda):
                         new_value_map = new_image.get('value', {}).get('N')
 
                         if old_value_map and new_value_map:
+                            _LOG.debug("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", old_value_map, new_value_map)
                             old_value = int(old_value_map)
                             new_value = {
                                 'key': item_key,
@@ -67,6 +68,7 @@ class AuditProducer(AbstractLambda):
                             if old_value != new_value['value']:
                                 updated_attribute = 'value'
                                 _LOG.debug("Detected change in 'value'. Old value: %s, New value: %s", old_value, new_value['value'])
+                                new_value = int(new_value_map)
                         else:
                             _LOG.warning("Missing 'value' fields in OldImage or NewImage for MODIFY event")
 
@@ -75,7 +77,7 @@ class AuditProducer(AbstractLambda):
                         'id': str(uuid.uuid4()),
                         'itemKey': item_key,
                         'modificationTime': modification_time,
-                        'newValue': int(new_value["value"])
+                        'newValue': new_value
                     }
 
                     # Include oldValue and updatedAttribute only for MODIFY events
