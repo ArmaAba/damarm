@@ -24,8 +24,9 @@ class UuidGenerator(AbstractLambda):
             uuids = [str(uuid.uuid4()) for _ in range(10)]
             _LOG.info(f"Generated UUIDs: {uuids}")
             data = json.dumps({"uuids": uuids})
-            timestamp = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-            file_name = f"uuids_{timestamp}.json"
+            timestamp = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+            timestamp = timestamp[:-3] + 'Z'
+            file_name = f"{timestamp}"
             _LOG.info(f"File name for UUID storage: {file_name}")
             bucket_name = os.environ.get("target_table")
             _LOG.info(f"Target S3 bucket: {bucket_name}")
