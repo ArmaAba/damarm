@@ -23,7 +23,7 @@ class UuidGenerator(AbstractLambda):
         try:
             uuids = [str(uuid.uuid4()) for _ in range(10)]
             _LOG.info(f"Generated UUIDs: {uuids}")
-            data = json.dumps({"uuids": uuids})
+            data = json.dumps({"ids": uuids})
             timestamp = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
             timestamp = timestamp[:-3] + 'Z'
             file_name = f"{timestamp}"
