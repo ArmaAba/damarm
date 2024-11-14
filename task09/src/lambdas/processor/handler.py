@@ -8,7 +8,7 @@ import uuid
 
 _LOG = get_logger('Processor-handler')
 dynamodb = boto3.resource("dynamodb")
-table_name = os.environ.get("table", "Weather-test")
+table_name = os.environ.get("table", "cmtr-f7e4afc6-Weather-test")
 weather_table = dynamodb.Table(table_name)
 
 class OpenMeteoClient:

@@ -17,7 +17,7 @@
   "ephemeral_storage": 512,
   "logs_expiration": "${logs_expiration}",
   "tags": {},
-    "tracing_config": {
-    "mode": "Active"
-  }
+  "tracing_config": {
+  "mode": "Active"
+}
 }
