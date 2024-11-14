@@ -16,5 +16,8 @@
   "url_config": {},
   "ephemeral_storage": 512,
   "logs_expiration": "${logs_expiration}",
-  "tags": {}
+  "tags": {},
+  "layers": [
+    "api_handler_layer"
+  ]
 }
