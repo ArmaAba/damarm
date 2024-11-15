@@ -9,25 +9,10 @@ from decimal import Decimal
 
 _LOG = get_logger('Processor-handler')
 dynamodb = boto3.resource("dynamodb")
-os.environ["target_table"] = "cmtr-f7e4afc6-Weather"
+os.environ["target_table"] = "cmtr-f7e4afc6-Weather-test"
 table_name = os.environ.get("target_table")
 weather_table = dynamodb.Table(table_name)
 
-
-# def enable_xray_tracing(function_name):
-#     lambda_client = boto3.client('lambda')
-#
-#     try:
-#         lambda_client.update_function_configuration(
-#             FunctionName=function_name,
-#             TracingConfig={
-#                 'Mode': 'Active'  # Enables X-Ray tracing
-#             }
-#         )
-#         _LOG.info(f"X-Ray tracing enabled for {function_name}")
-#     except Exception as e:
-#         _LOG.error(f"Failed to enable X-Ray tracing: {str(e)}")
-# enable_xray_tracing("processor")
 
 class OpenMeteoClient:
     def __init__(self):
