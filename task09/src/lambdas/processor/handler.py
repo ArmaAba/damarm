@@ -4,16 +4,30 @@ import os
 import requests
 import boto3
 import uuid
+from decimal import Decimal
 
 
 _LOG = get_logger('Processor-handler')
 dynamodb = boto3.resource("dynamodb")
-os.environ["target_table"] = "Weather"
+os.environ["target_table"] = "cmtr-f7e4afc6-Weather"
 table_name = os.environ.get("target_table")
-_LOG.info(os.environ)
-_LOG.info(os.environ)
-_LOG.info(os.environ)
 weather_table = dynamodb.Table(table_name)
+
+
+# def enable_xray_tracing(function_name):
+#     lambda_client = boto3.client('lambda')
+#
+#     try:
+#         lambda_client.update_function_configuration(
+#             FunctionName=function_name,
+#             TracingConfig={
+#                 'Mode': 'Active'  # Enables X-Ray tracing
+#             }
+#         )
+#         _LOG.info(f"X-Ray tracing enabled for {function_name}")
+#     except Exception as e:
+#         _LOG.error(f"Failed to enable X-Ray tracing: {str(e)}")
+# enable_xray_tracing("processor")
 
 class OpenMeteoClient:
     def __init__(self):
@@ -37,9 +51,8 @@ class Processor(AbstractLambda):
 
     def validate_request(self, event) -> dict:
         pass
-        
+
     def handle_request(self, event, context):
-        pass
         # Extract latitude and longitude from event or use default values
         latitude = event.get('queryStringParameters', {}).get('latitude', '50.4375')
         longitude = event.get('queryStringParameters', {}).get('longitude', '30.5')
@@ -49,12 +62,28 @@ class Processor(AbstractLambda):
         try:
             weather_data = weather_client.get_weather_forecast(latitude, longitude)
 
+            # Convert latitude and longitude to Decimal (not float)
+            latitude = Decimal(latitude)
+            longitude = Decimal(longitude)
+
+            # Convert float fields to Decimal recursively in the weather data
+            def convert_floats(obj):
+                if isinstance(obj, list):
+                    return [convert_floats(i) for i in obj]
+                elif isinstance(obj, dict):
+                    return {k: convert_floats(v) for k, v in obj.items()}
+                elif isinstance(obj, float):
+                    return Decimal(str(obj))  # Convert float to Decimal
+                return obj
+
+            weather_data = convert_floats(weather_data)
+
             # Extract and structure data according to the schema
             item = {
                 'id': str(uuid.uuid4()),  # Unique identifier for the entry
                 'forecast': {
-                    'elevation': weather_data.get('elevation', 0),
-                    'generationtime_ms': weather_data.get('generationtime_ms', 0),
+                    'elevation': weather_data.get('elevation', Decimal(0)),
+                    'generationtime_ms': weather_data.get('generationtime_ms', Decimal(0)),
                     'hourly': {
                         'temperature_2m': weather_data.get('hourly', {}).get('temperature_2m', []),
                         'time': weather_data.get('hourly', {}).get('time', [])
@@ -63,14 +92,13 @@ class Processor(AbstractLambda):
                         'temperature_2m': weather_data.get('hourly_units', {}).get('temperature_2m', ''),
                         'time': weather_data.get('hourly_units', {}).get('time', '')
                     },
-                    'latitude': float(latitude),
-                    'longitude': float(longitude),
+                    'latitude': latitude,  # Make sure to use Decimal here
+                    'longitude': longitude,  # And here
                     'timezone': weather_data.get('timezone', ''),
                     'timezone_abbreviation': weather_data.get('timezone_abbreviation', ''),
-                    'utc_offset_seconds': weather_data.get('utc_offset_seconds', 0)
+                    'utc_offset_seconds': weather_data.get('utc_offset_seconds', Decimal(0))
                 }
             }
-
             # Insert the item into the DynamoDB table
             weather_table.put_item(Item=item)
 
