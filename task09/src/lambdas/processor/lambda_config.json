@@ -10,7 +10,7 @@
   "lambda_path": "lambdas/processor",
   "dependencies": [],
   "event_sources": [],
-  "env_variables": {"table": "${target_table}"},
+  "env_variables": {"target_table": "${target_table}"},
   "publish_version": true,
   "alias": "${lambdas_alias_name}",
   "url_config": {"auth_type":  "NONE"},

@@ -1,14 +1,18 @@
 from commons.log_helper import get_logger
 from commons.abstract_lambda import AbstractLambda
+import os
 import requests
 import boto3
-import os
 import uuid
 
 
 _LOG = get_logger('Processor-handler')
 dynamodb = boto3.resource("dynamodb")
-table_name = os.environ.get("table", "cmtr-f7e4afc6-Weather-test")
+os.environ["target_table"] = "Weather"
+table_name = os.environ.get("target_table")
+_LOG.info(os.environ)
+_LOG.info(os.environ)
+_LOG.info(os.environ)
 weather_table = dynamodb.Table(table_name)
 
 class OpenMeteoClient:
@@ -35,6 +39,7 @@ class Processor(AbstractLambda):
         pass
         
     def handle_request(self, event, context):
+        pass
         # Extract latitude and longitude from event or use default values
         latitude = event.get('queryStringParameters', {}).get('latitude', '50.4375')
         longitude = event.get('queryStringParameters', {}).get('longitude', '30.5')
@@ -89,7 +94,7 @@ class Processor(AbstractLambda):
                     "error": error_message
                 }
             }
-    
+
 
 HANDLER = Processor()
 
