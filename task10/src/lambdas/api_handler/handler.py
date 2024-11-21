@@ -5,6 +5,9 @@ from commons.abstract_lambda import AbstractLambda
 import os
 from decimal import Decimal
 import uuid
+from boto3.dynamodb.conditions import Attr
+from datetime import datetime
+
 dynamodb = boto3.resource('dynamodb')
 cognito_client = boto3.client('cognito-idp')
 user_pool_id = os.environ.get("cup_id")
@@ -196,7 +199,7 @@ class ApiHandler(AbstractLambda):
             # Query DynamoDB for the table with the given ID
             response = table.get_item(
                 Key={
-                    'id': str(table_id)
+                    'id': table_id
                 }
             )
 
@@ -215,24 +218,49 @@ class ApiHandler(AbstractLambda):
             return self.response(500, 'Internal server error')
 
     def create_reservation(self, event):
-        # Parse the body from the event
         try:
             body = json.loads(event.get('body', '{}'))
-            table_number = body['tableNumber']
-            client_name = body['clientName']
-            phone_number = body['phoneNumber']
-            date = body['date']
-            slot_time_start = body['slotTimeStart']
-            slot_time_end = body['slotTimeEnd']
+            table_number = int(body.get('tableNumber'))
+            client_name = body.get('clientName')
+            phone_number = body.get('phoneNumber')
+            date = body.get('date')
+            slot_time_start = body.get('slotTimeStart')
+            slot_time_end = body.get('slotTimeEnd')
 
-            # Generate a unique reservation ID
+            # DynamoDB Table Names
+            tables_table_name = os.environ.get('tables_table', 'Tables')
+            reservation_table_name = os.environ.get('reservation_tables', 'Reservations')
+
+            # Check if the table exists
+            tables_table = dynamodb.Table(tables_table_name)
+            table_response = tables_table.get_item(Key={'id': table_number})
+            if 'Item' not in table_response:
+                _LOG.error(f"Table with id {table_number} does not exist.")
+                return {
+                    'statusCode': 400,
+                    'body': json.dumps('Non-existent table', cls=DecimalEncoder)
+                }
+
+            # Check for overlapping reservations
+            reservations_table = dynamodb.Table(reservation_table_name)
+            scan_result = reservations_table.scan(
+                FilterExpression=Attr('tableNumber').eq(table_number) & Attr('date').eq(date)
+            )
+            for reservation in scan_result['Items']:
+                existing_start = datetime.strptime(reservation['slotTimeStart'], '%H:%M')
+                existing_end = datetime.strptime(reservation['slotTimeEnd'], '%H:%M')
+                new_start = datetime.strptime(slot_time_start, '%H:%M')
+                new_end = datetime.strptime(slot_time_end, '%H:%M')
+
+                if new_start < existing_end and new_end > existing_start:
+                    _LOG.error("Reservation overlaps with an existing reservation.")
+                    return {
+                        'statusCode': 400,
+                        'body': json.dumps('Reservation overlaps with an existing reservation', cls=DecimalEncoder)
+                    }
+
+            # Proceed to create the reservation since no overlaps exist and table exists
             reservation_id = str(uuid.uuid4())
-
-            # Your DynamoDB table name for reservations, assuming it's named 'Reservations'
-            table_name = os.environ.get('reservation_tables', 'Reservations')
-            table = dynamodb.Table(table_name)
-
-            # Construct the item to insert into DynamoDB
             item = {
                 'id': reservation_id,
                 'tableNumber': table_number,
@@ -243,18 +271,25 @@ class ApiHandler(AbstractLambda):
                 'slotTimeEnd': slot_time_end
             }
 
-            # Insert the item into DynamoDB
-            table.put_item(Item=item)
-
-            # Successfully created the reservation, return the reservationId
-            return self.response(200, {'reservationId': reservation_id})
+            reservations_table.put_item(Item=item)
+            _LOG.info(f"Reservation created successfully: {reservation_id}")
+            return {
+                'statusCode': 200,
+                'body': json.dumps({'reservationId': reservation_id}, cls=DecimalEncoder)
+            }
 
         except KeyError as e:
             _LOG.error(f"Missing required reservation field: {str(e)}")
-            return self.response(400, 'Bad request: Missing required field')
+            return {
+                'statusCode': 400,
+                'body': json.dumps('Bad request: Missing required field', cls=DecimalEncoder)
+            }
         except Exception as e:
             _LOG.error(f"Error creating reservation: {str(e)}")
-            return self.response(400, 'Unable to create reservation')
+            return {
+                'statusCode': 400,
+                'body': json.dumps('Unable to create reservation', cls=DecimalEncoder)
+            }
 
     def get_reservations(self, event):
         try:
