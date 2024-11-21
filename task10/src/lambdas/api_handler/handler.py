@@ -129,23 +129,22 @@ class ApiHandler(AbstractLambda):
         # Attempt to fetch all table entries from your DynamoDB 'Tables' table
         try:
             response = table.scan()  # This retrieves all items in the table. Consider Query for more scalability
-            tables_data = response.get('Items', [])
+            # Serialize and then Deserialize the Items using DecimalEncoder for handling Decimal objects correctly
+            serialized_tables = json.dumps(response.get('Items', []), cls=DecimalEncoder)
+            tables_data = json.loads(serialized_tables)
 
-            # Process and format the data as required
-            formatted_tables = [{
-                "id": item["id"],
-                "number": item["number"],
-                "places": item["places"],
-                "isVip": item["isVip"],
-                "minOrder": item.get("minOrder")  # This uses .get() as 'minOrder' is optional
-            } for item in tables_data]
-
-            # Return the formatted table data
-            return self.response(200, {"tables": formatted_tables})
+            # Return the response with the list of formatted table data
+            return {
+                'statusCode': 200,
+                'body': json.dumps({"tables": tables_data})
+            }
 
         except Exception as e:
             _LOG.error(f"Error fetching table data: {str(e)}")
-            return self.response(500, 'Internal server error fetching table data')
+            return {
+                'statusCode': 500,
+                'body': json.dumps('Internal server error fetching table data')
+            }
 
     def create_table(self, event):
         # Parse the body from the event
