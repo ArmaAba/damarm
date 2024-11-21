@@ -151,11 +151,12 @@ class ApiHandler(AbstractLambda):
         # Parse the body from the event
         try:
             body = json.loads(event.get('body', '{}'))
-            table_id = body.get('id')  # Ensure your DynamoDB table auto-generates this if not provided
-            table_number = body['number']
-            places = body['places']
-            is_vip = body['isVip']
-            min_order = body.get('minOrder', None)  # Optional attribute
+            # Convert id to int as per specification
+            table_id = int(body.get('id'))  # This can raise a ValueError if 'id' is not a valid integer string
+            table_number = int(body['number'])
+            places = int(body['places'])
+            is_vip = bool(body['isVip'])
+            min_order = body.get('minOrder')
 
             # Assuming your DynamoDB table is named 'Tables'
             table_name = os.environ.get('tables_table', 'Tables')
