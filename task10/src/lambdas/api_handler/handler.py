@@ -233,14 +233,20 @@ class ApiHandler(AbstractLambda):
 
             # Check if the table exists
             tables_table = dynamodb.Table(tables_table_name)
-            table_response = tables_table.get_item(Key={'id': table_number})
-            if 'Item' not in table_response or not table_response['Item']:
+            table_response = tables_table.scan(
+                FilterExpression=Attr('number').eq(table_number)
+            )
+
+            if not table_response.get('Items'):  # No matching table found
                 _LOG.error(
-                    f"Table with id {table_number} not found in table {tables_table_name}. Response: {table_response}")
+                    f"Table with number {table_number} not found in table {tables_table_name}. Response: {table_response}")
                 return {
                     'statusCode': 400,
                     'body': json.dumps(f'Non-existent table {table_number}', cls=DecimalEncoder)
                 }
+            # Extract the table item
+            table_item = table_response['Items'][0]
+            _LOG.info(f"Table found: {table_item}")
 
             # Check for overlapping reservations
             reservations_table = dynamodb.Table(reservation_table_name)
