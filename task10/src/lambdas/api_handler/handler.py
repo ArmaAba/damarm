@@ -229,7 +229,7 @@ class ApiHandler(AbstractLambda):
 
             # DynamoDB Table Names
             tables_table_name = os.environ.get('tables_table', 'Tables')
-            reservation_table_name = os.environ.get('reservation_tables', 'Reservations')
+            reservation_table_name = os.environ.get('reservation_tables', 'cmtr-f7e4afc6-Reservations-test')
 
             # Check if the table exists
             tables_table = dynamodb.Table(tables_table_name)
