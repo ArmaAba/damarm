@@ -228,7 +228,7 @@ class ApiHandler(AbstractLambda):
             slot_time_end = body.get('slotTimeEnd')
 
             # DynamoDB Table Names
-            tables_table_name = os.environ.get('tables_table', 'Tables')
+            tables_table_name = os.environ.get('tables_table', 'cmtr-f7e4afc6-Tables-test')
             reservation_table_name = os.environ.get('reservation_tables', 'cmtr-f7e4afc6-Reservations-test')
 
             # Check if the table exists
