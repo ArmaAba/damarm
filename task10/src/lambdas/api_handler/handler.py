@@ -238,7 +238,7 @@ class ApiHandler(AbstractLambda):
                 _LOG.error(f"Table with id {table_number} does not exist.")
                 return {
                     'statusCode': 400,
-                    'body': json.dumps('Non-existent table', cls=DecimalEncoder)
+                    'body': json.dumps(f'Non-existent table {table_number}, {tables_table_name}, {reservation_table_name}, {tables_table}, {table_response}', cls=DecimalEncoder)
                 }
 
             # Check for overlapping reservations
