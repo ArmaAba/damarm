@@ -17,6 +17,8 @@
   "paths": {
     "/reservations": {
       "get": {
+        "summary": "List Reservations",
+        "description": "Retrieves a list of all reservations.",
         "responses": {
           "200": {
             "description": "200 response",
@@ -57,8 +59,33 @@
         }
       },
       "post": {
-        "summary": "User Sign In",
-        "description": "Authenticates a user with their credentials.",
+        "summary": "Create Reservation",
+        "description": "Creates a new reservation with the provided details.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tableId": {
+                    "type": "string",
+                    "description": "Identifier of the table being reserved"
+                  },
+                  "time": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Reservation time"
+                  }
+                },
+                "required": [
+                  "tableId",
+                  "time"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "200 response",
@@ -149,6 +176,8 @@
     },
     "/tables": {
       "get": {
+        "summary": "List Tables",
+        "description": "Retrieves a list of all tables available for reservation.",
         "responses": {
           "200": {
             "description": "200 response",
@@ -189,8 +218,27 @@
         }
       },
       "post": {
-        "summary": "User Sign In",
-        "description": "Authenticates a user with their credentials.",
+        "summary": "Add New Table",
+        "description": "Creates a new table with the specified details.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "seats": {
+                    "type": "integer",
+                    "description": "Number of seats at the table"
+                  }
+                },
+                "required": [
+                  "seats"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "200 response",
@@ -283,6 +331,30 @@
       "post": {
         "summary": "User Sign In",
         "description": "Authenticates a user with their credentials.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "200 response",
@@ -370,6 +442,34 @@
       "post": {
         "summary": "User Registration",
         "description": "Registers a new user with the provided information.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password",
+                  "name"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "200 response",
@@ -455,6 +555,8 @@
     },
     "/tables/{tableId}": {
       "get": {
+        "summary": "Get Table Details",
+        "description": "Retrieves details of a specific table by its ID.",
         "parameters": [
           {
             "name": "tableId",
@@ -462,7 +564,8 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Unique identifier of the table"
           }
         ],
         "responses": {
