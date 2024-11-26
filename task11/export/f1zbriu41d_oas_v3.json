@@ -57,6 +57,8 @@
         }
       },
       "post": {
+        "summary": "User Sign In",
+        "description": "Authenticates a user with their credentials.",
         "responses": {
           "200": {
             "description": "200 response",
@@ -187,6 +189,8 @@
         }
       },
       "post": {
+        "summary": "User Sign In",
+        "description": "Authenticates a user with their credentials.",
         "responses": {
           "200": {
             "description": "200 response",
@@ -277,6 +281,8 @@
     },
     "/signin": {
       "post": {
+        "summary": "User Sign In",
+        "description": "Authenticates a user with their credentials.",
         "responses": {
           "200": {
             "description": "200 response",
@@ -362,6 +368,8 @@
     },
     "/signup": {
       "post": {
+        "summary": "User Registration",
+        "description": "Registers a new user with the provided information.",
         "responses": {
           "200": {
             "description": "200 response",
