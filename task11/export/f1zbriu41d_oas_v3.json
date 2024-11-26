@@ -1,0 +1,312 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "task11_api",
+    "version": "2024-11-26T15:37:49Z",
+    "description": "API for managing reservations, tables, and user authentication."
+  },
+  "servers": [
+    {
+      "url": "https://f1zbriu41d.execute-api.eu-central-1.amazonaws.com/{basePath}",
+      "variables": {
+        "basePath": {
+          "default": "api"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/reservations": {
+      "get": {
+        "summary": "List Reservations",
+        "description": "Retrieve a list of all reservations.",
+        "responses": {
+          "200": {
+            "description": "A list of reservations.",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        },
+        "security": [
+          {
+            "authorizer": {
+              "type": "apiKey",
+              "name": "Authorization",
+              "in": "header",
+              "x-amazon-apigateway-authtype": "cognito_user_pools",
+              "x-amazon-apigateway-authorizer": {
+                "x-syndicate-cognito-userpool-names": [
+                  "${booking_userpool}"
+                ],
+                "type": "cognito_user_pools"
+              }
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create Reservation",
+        "description": "Create a new reservation.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewReservation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reservation created successfully.",
+            "headers": {
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Reservation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        },
+        "security": [
+          {
+                "authorizer": {
+        "type": "apiKey",
+        "name": "Authorization",
+        "in": "header",
+        "x-amazon-apigateway-authtype": "cognito_user_pools",
+        "x-amazon-apigateway-authorizer": {
+            "x-syndicate-cognito-userpool-names": ["${booking_userpool}"],
+            "type": "cognito_user_pools"
+        }
+    }
+          }
+        ]
+      }
+    },
+    "/tables": {
+      "get": {
+        "summary": "List Tables",
+        "description": "Retrieve a list of all tables.",
+        "responses": {
+          "200": {
+            "description": "A list of tables.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TableList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Table",
+        "description": "Create a new table.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewTable"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Table created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Table"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/signin": {
+      "post": {
+        "summary": "User Sign-in",
+        "description": "Authenticate an existing user.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCredentials"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User authenticated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Reservation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "guests": {
+            "type": "integer"
+          }
+        }
+      },
+      "NewReservation": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "guests": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "date",
+          "guests"
+        ]
+      },
+      "ReservationList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Reservation"
+        }
+      },
+      "Table": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "seats": {
+            "type": "integer"
+          }
+        }
+      },
+      "NewTable": {
+        "type": "object",
+        "properties": {
+          "seats": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seats"
+        ]
+      },
+      "TableList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Table"
+        }
+      },
+      "UserCredentials": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ]
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  }
+}
